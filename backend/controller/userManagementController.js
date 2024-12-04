@@ -1,151 +1,152 @@
+const CustomError =require('../utils/customError.js')
+const responseHandler= require('../utils/responseHandler.js')
 const User = require('../modals/userManagementModal');
 const sendEmail = require("../utils/sendEmail.js");
 const mongoose = require('mongoose'); // Ensure mongoose is imported
 const crypto = require('crypto');
 
-const createUser = async (req, res) => {
-    try {
-        const {userName, password, email, phone} = req.body;
-        const user = new User({userName, password, email, phone});
+const createUser = async (req, res, next) => {
+  try {
+      const { userName, password, email, phone } = req.body;
 
-        // Generate email verification token
-        const verificationCode = user.generateEmailVerificationCode();
+      // Create new user
+      const user = new User({ userName, password, email, phone });
 
-         await user.save();
-        //jwt token
-        // const token = user.createJWT();
+      // Generate email verification token
+      const verificationCode = user.generateEmailVerificationCode();
 
-        // Send verification email
-        // Send the new verification code via email
-        const htmlContent = `
-        <html>
-          <head>
-            <style>
-              body { font-family: Arial, sans-serif; font-size: 16px; color: #333; }
-              .header { background-color: #f8f8f8; padding: 20px 5px; text-align: center; }
-              .content { padding: 20px 5px; }
-              .footer { background-color: #f8f8f8; padding: 20px 5px; text-align: center; font-size: 14px; }
-              .code { font-size: 24px; font-weight: bold; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>Email Verification</h1>
-            </div>
-            <div class="content">
-              <p>Here is your new email verification code:</p>
-              <p class="code">${verificationCode}</p>
-              <p>This code will expire in 10 minutes.</p>
-            </div>
-            <div class="footer">
-              <p>Ecofocus Team</p>
-            </div>
-          </body>
-        </html>
+      // Save user to database
+      await user.save();
+
+      // Prepare email content
+      const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; font-size: 16px; color: #333; }
+            .header { background-color: #f8f8f8; padding: 20px 5px; text-align: center; }
+            .content { padding: 20px 5px; }
+            .footer { background-color: #f8f8f8; padding: 20px 5px; text-align: center; font-size: 14px; }
+            .code { font-size: 24px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Email Verification</h1>
+          </div>
+          <div class="content">
+            <p>Here is your new email verification code:</p>
+            <p class="code">${verificationCode}</p>
+            <p>This code will expire in 10 minutes.</p>
+          </div>
+          <div class="footer">
+            <p>Ecofocus Team</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+      // Send verification email
+      await sendEmail({
+          to: user.email,
+          subject: 'Email Verification',
+          html: htmlContent,
+      });
+
+      // Send success response
+      return responseHandler(res, 200, 'Regissssstration successful', {
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
+      });
+  } catch (error) {
+      // Pass error to global error handler
+      next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+  }
+};
+
+const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return responseHandler(res, 404, 'User not found', false);
+    }
+
+    // Check if the password matches
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return responseHandler(res, 401, 'Invalid password', false); // 401 Unauthorized for incorrect credentials
+    }
+
+    // Check if the user's email is verified
+    if (!user.isEmailVerified) {
+      const verificationCode = user.generateEmailVerificationCode();
+      await user.save();
+
+      // Prepare verification email content
+      const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; font-size: 16px; color: #333; }
+            .header { background-color: #f8f8f8; padding: 20px 5px; text-align: center; }
+            .content { padding: 20px 5px; }
+            .footer { background-color: #f8f8f8; padding: 20px 5px; text-align: center; font-size: 14px; }
+            .code { font-size: 24px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Email Verification</h1>
+          </div>
+          <div class="content">
+            <p>Here is your new email verification code:</p>
+            <p class="code">${verificationCode}</p>
+            <p>This code will expire in 10 minutes.</p>
+          </div>
+          <div class="footer">
+            <p>Ecofocus Team</p>
+          </div>
+        </body>
+      </html>
       `;
 
+      // Send verification email
+      await sendEmail({
+        to: user.email,
+        subject: 'Email Verification',
+        html: htmlContent,
+      });
 
-        await sendEmail({
-            to: user.email,
-            subject: 'Email Verification',
-            html: htmlContent
-        });
-
-
-        res.status(200).json({
-            message:'registration successful',
-            email: user.email,
-            isEmailVerified: user.isEmailVerified,
-            data:true
-        })
-    } catch (error) {
-        res.status(200).json({
-            error:error.message,
-            message:'registration failed',
-            data:false
-        })
+      // Return response asking user to verify email
+      return responseHandler(
+        res,
+        400, // 400 Bad Request for incomplete verification
+        'Email not verified. Verification code sent to your email.',
+        {
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
+        }
+      );
     }
-}
 
-const login = async (req, res) => {
-    try {
-        const {email, password} = req.body;
-        const user = await User.findOne({email:email});
-        if(!user) {
-            return res.status(200).json({
-                message:'User not found',
-                data:false
-            })
-        }
-        const isMatch = await user.comparePassword(password);
-        if(!isMatch) {
-            return res.status(200).json({
-                message:'Invalid password',
-                data:false
-            })
-        }
-        
-        //send verification code if not verified
-        if(!user.isEmailVerified) {
-            const verificationCode = user.generateEmailVerificationCode();
-            await user.save();
-            const htmlContent = `
-            <html>
-              <head>
-                <style>
-                  body { font-family: Arial, sans-serif; font-size: 16px; color: #333; }
-                  .header { background-color: #f8f8f8; padding: 20px 5px; text-align: center; }
-                  .content { padding: 20px 5px; }
-                  .footer { background-color: #f8f8f8; padding: 20px 5px; text-align: center; font-size: 14px; }
-                  .code { font-size: 24px; font-weight: bold; }
-                </style>
-              </head>
-              <body>
-                <div class="header">
-                  <h1>Email Verification</h1>
-                </div>
-                <div class="content">
-                  <p>Here is your new email verification code:</p>
-                  <p class="code">${verificationCode}</p>
-                  <p>This code will expire in 10 minutes.</p>
-                </div>
-                <div class="footer">
-                  <p>Ecofocus Team</p>
-                </div>
-              </body>
-            </html>
-          `;
-  
-            await sendEmail({
-                to: user.email,
-                subject: 'Email Verification',
-                html: htmlContent
-            });
-            // do not send token
-            return res.status(200).json({
-                message:'Email not verified, verification code sent to your email',
-                data:true,
-                email: user.email,
-                isEmailVerified: user.isEmailVerified
-            })
-        }
-        //send jwt token if verified
-        const token = user.createJWT();
-        res.status(200).json({
-            message:'login successful',
-            email: user.email,
-            isEmailVerified: user.isEmailVerified,
-            token: token,
-            data:true
-        })
-    } catch (error) {
-        res.status(200).json({
-            error:error.message,
-            message:'login failed',
-            data:false
-        })
-    }
-}
+    // Generate JWT token
+    const token = user.createJWT();
+
+    // Send success response
+    return responseHandler(res, 200, 'Login successful', {
+      email: user.email,
+      isEmailVerified: user.isEmailVerified,
+      token,
+    });
+  } catch (error) {
+    // Pass error to global error handler
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+  }
+};
+
 
 
 const forgotPassword = async (req, res, next) => {
