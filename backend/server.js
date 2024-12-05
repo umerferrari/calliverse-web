@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const connectDb = require("./db/connect.js");
 const errorHandler = require("./middleware/errorHandler.js");
+const path = require('path'); 
+
 const cors = require("cors");
 const morgan = require("morgan");
 const { initializeSocket } = require("./sockets/socket.js");
@@ -16,6 +18,12 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+
+
+// Expose the 'uploads' directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
 
 // Log every request to the console
 app.use(morgan(":method :url :status :response-time ms"));
