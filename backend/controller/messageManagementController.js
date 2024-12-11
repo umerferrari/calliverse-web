@@ -7,9 +7,6 @@ const User = require("../modals/userManagementModal");
 const mongoose = require("mongoose");
 const path = require("path");
 
-
-
-
 // Utility function to handle file upload metadata
 const handleUploadedFiles = (files) => {
   return files.map((file) => {
@@ -34,8 +31,6 @@ const handleUploadedFiles = (files) => {
   });
 };
 
-
-
 // Upload controller
 const uploadFiles = (req, res, next) => {
   try {
@@ -53,7 +48,12 @@ const uploadFiles = (req, res, next) => {
     // Handle and extract metadata for the uploaded files
     const filesMetadata = handleUploadedFiles(req.files);
 
-    return responseHandler(res, 200, "Files uploaded successfully", filesMetadata);
+    return responseHandler(
+      res,
+      200,
+      "Files uploaded successfully",
+      filesMetadata
+    );
   } catch (error) {
     next(
       error instanceof CustomError ? error : new CustomError(error.message, 500)
@@ -61,7 +61,7 @@ const uploadFiles = (req, res, next) => {
   }
 };
 
-// Create message controller (same as before, just simplified for context)
+// Create message method
 const createMessage = async ({
   chatId,
   senderId,
@@ -89,7 +89,8 @@ const createMessage = async ({
       throw new Error("Media files are required for media messages.");
     }
 
-    const filesMetadata = handleUploadedFiles(files);
+    //this will be used when we want to directly create new message through new messagecontroller
+    // const filesMetadata = handleUploadedFiles(files);
 
     newMessage = new Message({
       chatId,
@@ -97,7 +98,7 @@ const createMessage = async ({
       receiverId,
       messageType: "media",
       content: content || null,
-      files: filesMetadata,
+      files,
       timestamp: Date.now(),
     });
   } else if (messageType === "text") {
