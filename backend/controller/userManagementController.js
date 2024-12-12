@@ -10,7 +10,7 @@ const {updateUser,createUser} = require("../services/userManagementService.js");
 const createUserController = async (req, res, next) => {
   try {
     const userData = req.body;
-
+console.log(userData)
     // Call the service to create a new user
     const user = await createUser(userData);
 
