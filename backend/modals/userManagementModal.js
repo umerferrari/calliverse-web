@@ -37,6 +37,10 @@ const UserSchema = new mongoose.Schema(
     websiteLink: {
       type: String,
     },
+
+    isProfileCompleted: { type: Boolean, default: false }, 
+  
+
     userRole: {
       type: String,
       enum: ["admin", "user"], // Allowed values
@@ -61,13 +65,47 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
+// Hash password before saving
 UserSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   }
+
+  // Check if profile is completed
+  if (
+    this.firstName &&
+    this.lastName &&
+    this.email &&
+    this.password &&
+    this.isModified("firstName", "lastName", "email", "password")
+  ) {
+    this.isProfileCompleted = true;
+  } else {
+    this.isProfileCompleted = false;
+  }
+
   next();
 });
+
+// //update isProfileCompleted to true when the required fields are filled
+// UserSchema.pre("findOneAndUpdate", async function (next) {
+//   const update = this.getUpdate();
+
+//   // Check if necessary fields are being updated
+//   if (update.firstName && update.lastName && update.email && update.password) {
+//     update.isProfileCompleted = true;
+//   } else {
+//     update.isProfileCompleted = false;
+//   }
+
+//   this.setUpdate(update);
+//   next();
+// });
+
+
+
+
 
 UserSchema.methods.createJWT = function () {
   return jwt.sign(

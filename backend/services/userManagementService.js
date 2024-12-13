@@ -69,7 +69,6 @@ const createUser = async (userData) => {
   }
 };
 
-
 /**
  * Updates the user's profile fields and profile image.
  * @param {String} userId - The ID of the user to update.
@@ -100,9 +99,25 @@ const updateUser = async (userId, updateData, profileImageFile = null) => {
     }
 
     // Update the user document
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        ...updateData,
+      },
+      { new: true }
+    );
+    //change isProfileCOmpleted to true if required fields are filled
+    if (
+      updatedUser.firstName &&
+      updatedUser.lastName &&
+      updatedUser.email &&
+      updatedUser.password
+    ) {
+      updatedUser.isProfileCompleted = true;
+    } else {
+      updatedUser.isProfileCompleted = true;
+
+    }
     const modifiedUpdatedUser = {
       _id: updatedUser?._id,
       profileImage: updatedUser?.profileImage || "",
@@ -111,6 +126,7 @@ const updateUser = async (userId, updateData, profileImageFile = null) => {
       email: updatedUser?.email,
       bio: updatedUser?.bio || "",
       websiteLink: updatedUser?.websiteLink || "",
+      isProfileCompleted: updatedUser?.isProfileCompleted,
     };
     return modifiedUpdatedUser;
   } catch (error) {
@@ -118,4 +134,83 @@ const updateUser = async (userId, updateData, profileImageFile = null) => {
   }
 };
 
-module.exports ={ updateUser,createUser}
+const login = async (email, password) => {
+  try {
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw new CustomError("User not found", 404);
+    }
+
+    // Check if the password matches
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      throw new CustomError("Invalid password", 401); // 401 Unauthorized for incorrect credentials
+    }
+
+    // Check if the user's email is verified
+    if (!user.isEmailVerified) {
+      // Generate a new email verification code
+      const verificationCode = user.generateEmailVerificationCode();
+      await user.save();
+
+      // Prepare verification email content
+      const htmlContent = `
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; font-size: 16px; color: #333; }
+              .header { background-color: #f8f8f8; padding: 20px 5px; text-align: center; }
+              .content { padding: 20px 5px; }
+              .footer { background-color: #f8f8f8; padding: 20px 5px; text-align: center; font-size: 14px; }
+              .code { font-size: 24px; font-weight: bold; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Email Verification</h1>
+            </div>
+            <div class="content">
+              <p>Here is your new email verification code:</p>
+              <p class="code">${verificationCode}</p>
+              <p>This code will expire in 10 minutes.</p>
+            </div>
+            <div class="footer">
+              <p>Ecofocus Team</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      // Send verification email
+      await sendEmail({
+        to: user.email,
+        subject: "Email Verification",
+        html: htmlContent,
+      });
+
+      throw new CustomError(
+        "Email not verified. Verification code sent to your email.",
+        400 // 400 Bad Request for incomplete verification
+      );
+    }
+
+    // Generate JWT token
+    const token = user.createJWT();
+
+    // Return user data and token
+    return {
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      profileImage: user?.profileImage,
+      email: user?.email,
+      isProfileCompleted: user?.isProfileCompleted,
+      isEmailVerified: user.isEmailVerified,
+      token,
+    };
+  } catch (error) {
+    throw new CustomError(error.message, error.statusCode || 500);
+  }
+};
+
+module.exports = { login, updateUser, createUser };

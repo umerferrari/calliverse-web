@@ -5,7 +5,7 @@ const sendEmail = require("../utils/sendEmail.js");
 const mongoose = require("mongoose"); // Ensure mongoose is imported
 const crypto = require("crypto");
 
-const {updateUser,createUser} = require("../services/userManagementService.js"); // Service method
+const {updateUser,createUser,login} = require("../services/userManagementService.js"); // Service method
 
 const createUserController = async (req, res, next) => {
   try {
@@ -27,83 +27,101 @@ console.log(userData)
   }
 };
 
-const login = async (req, res, next) => {
+// const login = async (req, res, next) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     // Check if user exists
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return responseHandler(res, 404, "User not found", false);
+//     }
+
+//     // Check if the password matches
+//     const isMatch = await user.comparePassword(password);
+//     if (!isMatch) {
+//       return responseHandler(res, 401, "Invalid password", false); // 401 Unauthorized for incorrect credentials
+//     }
+
+//     // Check if the user's email is verified
+//     if (!user.isEmailVerified) {
+//       const verificationCode = user.generateEmailVerificationCode();
+//       await user.save();
+
+//       // Prepare verification email content
+//       const htmlContent = `
+//       <html>
+//         <head>
+//           <style>
+//             body { font-family: Arial, sans-serif; font-size: 16px; color: #333; }
+//             .header { background-color: #f8f8f8; padding: 20px 5px; text-align: center; }
+//             .content { padding: 20px 5px; }
+//             .footer { background-color: #f8f8f8; padding: 20px 5px; text-align: center; font-size: 14px; }
+//             .code { font-size: 24px; font-weight: bold; }
+//           </style>
+//         </head>
+//         <body>
+//           <div class="header">
+//             <h1>Email Verification</h1>
+//           </div>
+//           <div class="content">
+//             <p>Here is your new email verification code:</p>
+//             <p class="code">${verificationCode}</p>
+//             <p>This code will expire in 10 minutes.</p>
+//           </div>
+//           <div class="footer">
+//             <p>Ecofocus Team</p>
+//           </div>
+//         </body>
+//       </html>
+//       `;
+
+//       // Send verification email
+//       await sendEmail({
+//         to: user.email,
+//         subject: "Email Verification",
+//         html: htmlContent,
+//       });
+
+//       // Return response asking user to verify email
+//       return responseHandler(
+//         res,
+//         400, // 400 Bad Request for incomplete verification
+//         "Email not verified. Verification code sent to your email.",
+//         {
+//           email: user.email,
+//           isEmailVerified: user.isEmailVerified,
+//         }
+//       );
+//     }
+
+//     // Generate JWT token
+//     const token = user.createJWT();
+
+//     // Send success response
+//     return responseHandler(res, 200, "Login successful", {
+//       email: user.email,
+//       isEmailVerified: user.isEmailVerified,
+//       token,
+//     });
+//   } catch (error) {
+//     // Pass error to global error handler
+//     next(
+//       error instanceof CustomError ? error : new CustomError(error.message, 500)
+//     );
+//   }
+// };
+
+
+const loginController = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
-    const user = await User.findOne({ email });
-    if (!user) {
-      return responseHandler(res, 404, "User not found", false);
-    }
-
-    // Check if the password matches
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return responseHandler(res, 401, "Invalid password", false); // 401 Unauthorized for incorrect credentials
-    }
-
-    // Check if the user's email is verified
-    if (!user.isEmailVerified) {
-      const verificationCode = user.generateEmailVerificationCode();
-      await user.save();
-
-      // Prepare verification email content
-      const htmlContent = `
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; font-size: 16px; color: #333; }
-            .header { background-color: #f8f8f8; padding: 20px 5px; text-align: center; }
-            .content { padding: 20px 5px; }
-            .footer { background-color: #f8f8f8; padding: 20px 5px; text-align: center; font-size: 14px; }
-            .code { font-size: 24px; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Email Verification</h1>
-          </div>
-          <div class="content">
-            <p>Here is your new email verification code:</p>
-            <p class="code">${verificationCode}</p>
-            <p>This code will expire in 10 minutes.</p>
-          </div>
-          <div class="footer">
-            <p>Ecofocus Team</p>
-          </div>
-        </body>
-      </html>
-      `;
-
-      // Send verification email
-      await sendEmail({
-        to: user.email,
-        subject: "Email Verification",
-        html: htmlContent,
-      });
-
-      // Return response asking user to verify email
-      return responseHandler(
-        res,
-        400, // 400 Bad Request for incomplete verification
-        "Email not verified. Verification code sent to your email.",
-        {
-          email: user.email,
-          isEmailVerified: user.isEmailVerified,
-        }
-      );
-    }
-
-    // Generate JWT token
-    const token = user.createJWT();
+    // Call the service for user login
+    const data= await login(email, password);
 
     // Send success response
-    return responseHandler(res, 200, "Login successful", {
-      email: user.email,
-      isEmailVerified: user.isEmailVerified,
-      token,
-    });
+    return responseHandler(res, 200, "Login successful",data);
   } catch (error) {
     // Pass error to global error handler
     next(
@@ -404,7 +422,7 @@ module.exports = updateUserProfileController;
 
 module.exports = {
   createUserController,
-  login,
+  loginController,
   forgotPassword,
   resetPassword,
   verifyEmailCode,
