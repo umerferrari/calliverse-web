@@ -251,6 +251,7 @@ const resetPassword = async (req, res) => {
       .json({
         data: true,
         message: "Password reset successful",
+        userId: user._id,
         email: user.email,
         isEmailVerified: user.isEmailVerified,
         token: user.createJWT(),
@@ -299,6 +300,7 @@ const verifyEmailCode = async (req, res) => {
 
     res.status(200).json({
       message: "Email verified successfully!",
+      userId: user._id,
       email: user.email,
       isEmailVerified: user.isEmailVerified,
       token: user.createJWT(), //create jwt token for the verified user

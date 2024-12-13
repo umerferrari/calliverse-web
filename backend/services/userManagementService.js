@@ -206,6 +206,9 @@ const login = async (email, password) => {
       email: user?.email,
       isProfileCompleted: user?.isProfileCompleted,
       isEmailVerified: user.isEmailVerified,
+      userId: user._id,
+      bio: user?.bio || "",
+      websiteLink: user?.websiteLink || "",
       token,
     };
   } catch (error) {
