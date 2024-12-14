@@ -114,8 +114,10 @@ const updateUser = async (userId, updateData, profileImageFile = null) => {
       updatedUser.password
     ) {
       updatedUser.isProfileCompleted = true;
+      await updateUser.save
     } else {
-      updatedUser.isProfileCompleted = true;
+      updatedUser.isProfileCompleted = false;
+      await updateUser.save
 
     }
     const modifiedUpdatedUser = {
@@ -216,8 +218,6 @@ const login = async (email, password) => {
   }
 };
 
-
-
 /**
  * Fetches all users with pagination.
  * @param {Number} page - Current page number.
@@ -232,7 +232,9 @@ const fetchAllUsers = async (page = 1, limit = 20) => {
     const users = await User.find()
       .skip(skip)
       .limit(limit)
-      .select("_id firstName lastName email profileImage bio websiteLink isProfileCompleted") // Select only required fields
+      .select(
+        "_id firstName lastName email profileImage bio websiteLink isProfileCompleted"
+      ) // Select only required fields
       .lean();
 
     // Get total count of users
@@ -249,4 +251,4 @@ const fetchAllUsers = async (page = 1, limit = 20) => {
   }
 };
 
-module.exports = { login, updateUser, createUser ,fetchAllUsers};
+module.exports = { login, updateUser, createUser, fetchAllUsers };
