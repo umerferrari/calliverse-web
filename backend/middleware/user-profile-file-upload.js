@@ -21,7 +21,7 @@ const profileImageStorage = multer.diskStorage({
 
 // Define the file filter for profile image uploads
 const profileImageFilter = (req, file, cb) => {
-  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif']; // Only allow images
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif']; // Only allow images
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true); // Accept file
   } else {
