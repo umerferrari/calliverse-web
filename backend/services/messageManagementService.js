@@ -119,8 +119,45 @@ const deleteMediaFile = async (fileUrl) => {
     }
   };
 
+
+
+  /**
+ * Fetches all messages for a chat with pagination.
+ * @param {String} chatId - The ID of the chat.
+ * @param {Number} page - The current page.
+ * @param {Number} limit - The number of messages per page.
+ * @returns {Object} - Paginated list of messages and total count.
+ */
+const fetchAllMessages = async (chatId, page = 1, limit = 20) => {
+    const skip = (page - 1) * limit;
+  
+    // Verify if the chatId exists
+    const chatExists = await Chat.findById(chatId);
+    if (!chatExists) {
+      throw new CustomError('Chat not found', 404);
+    }
+  
+    // Fetch messages with pagination
+    const messages = await Message.find({ chatId })
+      .sort({ createdAt: -1 }) // Order by newest first
+      .skip(skip)
+      .limit(limit)
+      .populate('senderId', 'userName email'); // Populate sender details
+  
+    // Get the total count of messages for the chat
+    const totalMessages = await Message.countDocuments({ chatId });
+  
+    return {
+      messages,
+      totalMessages,
+      currentPage: page,
+      totalPages: Math.ceil(totalMessages / limit),
+    };
+  };
+
 module.exports = {
   handleUploadedFiles,
   createMessage,
-  getUndeliveredMessages,deleteMediaFile
+  getUndeliveredMessages,deleteMediaFile,
+  fetchAllMessages
 };

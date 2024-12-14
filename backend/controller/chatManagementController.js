@@ -1,7 +1,7 @@
 const CustomError = require("../utils/customError.js");
 const responseHandler = require("../utils/responseHandler.js");
 const Chat = require("../modals/chatManagementModel.js");
-
+const {fetchAllChats} = require("../services/chatManagementService.js")
 const createChat = async (req, res, next) => {
   try {
     const participants = req.body?.participants;
@@ -41,6 +41,27 @@ const createChat = async (req, res, next) => {
   }
 };
 
+const fetchAllChatsController = async (req, res, next) => {
+  try {
+    // const userId = req.params.userId;
+    // const { page = 1, limit = 20 } = req.query;
+
+    const { userId, page, limit } = req.validatedData;
+
+    // Call service to fetch chats
+    const result = await fetchAllChats(userId, parseInt(page, 10), parseInt(limit, 10));
+
+    // Return success response
+    responseHandler(res, 200, 'Chats fetched successfully.', result);
+  } catch (error) {
+    next(
+      error instanceof CustomError ? error : new CustomError(error.message, 500)
+
+    );
+  }
+};
+
 module.exports = {
   createChat,
+  fetchAllChatsController
 };

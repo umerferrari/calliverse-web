@@ -5,7 +5,8 @@ const {
   handleUploadedFiles,
   createMessage,
   getUndeliveredMessages,
-  deleteMediaFile
+  deleteMediaFile,
+  fetchAllMessages
 } = require("../services/messageManagementService.js");
 
 // Upload files controller
@@ -101,11 +102,33 @@ const getUndeliveredMessagesController = async (req, res, next) => {
   }
 };
 
+
+const fetchAllMessagesController = async (req, res, next) => {
+  try {
+    const chatId = req.params.chatId;
+    const { page = 1, limit = 20 } = req.query;
+
+    // Call service to fetch messages
+    const result = await fetchAllMessages(chatId, parseInt(page, 10), parseInt(limit, 10));
+
+    // Return success response
+    responseHandler(res, 200, 'Messages fetched successfully.', result);
+  } catch (error) {
+    next(
+      error instanceof CustomError ? error : new CustomError(error.message, 500)
+    );
+  }
+};
+
+
+
+
 module.exports = {
   uploadFiles,
   newMessage,
   getUndeliveredMessagesController,
-  deleteUploadedFiles
+  deleteUploadedFiles,
+  fetchAllMessagesController
 };
 
 

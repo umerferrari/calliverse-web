@@ -216,4 +216,37 @@ const login = async (email, password) => {
   }
 };
 
-module.exports = { login, updateUser, createUser };
+
+
+/**
+ * Fetches all users with pagination.
+ * @param {Number} page - Current page number.
+ * @param {Number} limit - Number of users per page.
+ * @returns {Object} - An object containing paginated users and metadata.
+ */
+const fetchAllUsers = async (page = 1, limit = 20) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    // Fetch users with pagination
+    const users = await User.find()
+      .skip(skip)
+      .limit(limit)
+      .select("_id firstName lastName email profileImage bio websiteLink isProfileCompleted") // Select only required fields
+      .lean();
+
+    // Get total count of users
+    const totalUsers = await User.countDocuments();
+
+    return {
+      users,
+      totalUsers,
+      currentPage: page,
+      totalPages: Math.ceil(totalUsers / limit),
+    };
+  } catch (error) {
+    throw new CustomError(error.message, error.statusCode || 500);
+  }
+};
+
+module.exports = { login, updateUser, createUser ,fetchAllUsers};

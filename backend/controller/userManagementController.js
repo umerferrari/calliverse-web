@@ -5,7 +5,7 @@ const sendEmail = require("../utils/sendEmail.js");
 const mongoose = require("mongoose"); // Ensure mongoose is imported
 const crypto = require("crypto");
 
-const {updateUser,createUser,login} = require("../services/userManagementService.js"); // Service method
+const {updateUser,createUser,login,fetchAllUsers} = require("../services/userManagementService.js"); // Service method
 
 const createUserController = async (req, res, next) => {
   try {
@@ -420,6 +420,26 @@ const updateUserProfileController = async (req, res, next) => {
   }
 };
 
+
+
+const getAllUsersController = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20 } = req.query; // Query parameters for pagination
+
+    // Call the service to fetch users
+    const result = await fetchAllUsers(parseInt(page, 10), parseInt(limit, 10));
+
+    // Return success response
+    return responseHandler(res, 200, "Users fetched successfully.", result);
+  } catch (error) {
+    // Pass error to global error handler
+    next(
+      error instanceof CustomError ? error : new CustomError(error.message, 500)
+    );
+  }
+};
+
+
 module.exports = updateUserProfileController;
 
 module.exports = {
@@ -429,5 +449,6 @@ module.exports = {
   resetPassword,
   verifyEmailCode,
   resendVerificationCode,
-  updateUserProfileController
+  updateUserProfileController,
+  getAllUsersController
 };

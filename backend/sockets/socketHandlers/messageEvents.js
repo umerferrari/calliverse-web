@@ -1,9 +1,10 @@
 const {
-  createMessage,
+  createMessage,fetchAllMessages
 } = require("../../services/messageManagementService");
 const Chat = require("../../modals/chatManagementModel");
 const { handleUploadedFiles } = require("../../utils/handleUploadedFIles");
-
+const validateSocketRequest= require("../../middleware/socketValidator")
+const {getAllChatMessagesSchema}=require("../../DTO/MessageDTO")
 module.exports = (io, socket, onlineUsers) => {
   socket.on("sendMessage", async (message, callback) => {
     try {
@@ -68,9 +69,35 @@ module.exports = (io, socket, onlineUsers) => {
     }
   });
 
+
+
   //acknowledgement event the message has been successfully reached to the receiver
   socket.on("messageReceived", async (response) => {
     
     console.log("Message delievered:", response);
   });
+
+//getAllChatMessages
+socket.on(
+  'getAllChatMessages',
+  (payload, callback) => {
+    validateSocketRequest(getAllChatMessagesSchema)(payload, callback, async () => {
+      try {
+        const { chatId, page, limit } = payload.validatedData;
+        console.log('Chat ID:', chatId, 'Page:', page, 'Limit:', limit);
+
+        const result = await fetchAllMessages(chatId, parseInt(page, 10), parseInt(limit, 10));
+
+        callback({
+          success: true,
+          data: result,
+        });
+      } catch (error) {
+        console.error('Error fetching messages:', error.message);
+        callback({ success: false, error: error.message });
+      }
+    });
+  }
+);
+
 };
