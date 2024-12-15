@@ -23,7 +23,7 @@ const fetchAllChats = async (userId, page = 1, limit = 20) => {
       .skip(skip)
       .limit(limit)
       .populate('lastMessage') // Populate last message details
-      .populate('participants', 'userName email'); // Populate participant details
+      .populate('participants', '_id userName email firstName lastName profileImage'); // Populate participant details
   
     // Get the total count of chats for the user
     const totalChats = await Chat.countDocuments({ participants: userId });
