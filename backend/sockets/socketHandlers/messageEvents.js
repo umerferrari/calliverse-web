@@ -219,40 +219,83 @@ module.exports = (io, socket, onlineUsers) => {
    * Event: getAllChatMessages
    * Fetches all messages for a particular chat with pagination.
    */
-  socket.on("getAllChatMessages", (payload, callback) => {
-    validateSocketRequest(getAllChatMessagesSchema)(
-      payload,
-      callback,
-      async () => {
-        try {
-          const { chatId, page, limit } = payload.validatedData;
+  // socket.on("getAllChatMessages", (payload, callback) => {
+  //   validateSocketRequest(getAllChatMessagesSchema)(
+  //     payload,
+  //     callback,
+  //     async () => {
+  //       try {
+  //         const { chatId, page, limit } = payload.validatedData;
 
-          if (!chatId || !page || !limit) {
-            throw new CustomError(
-              "chatId, page, and limit are required fields.",
-              400
-            );
-          }
+  //         if (!chatId || !page || !limit) {
+  //           throw new CustomError(
+  //             "chatId, page, and limit are required fields.",
+  //             400
+  //           );
+  //         }
 
-          const result = await fetchAllMessages(
-            chatId,
-            parseInt(page, 10),
-            parseInt(limit, 10)
-          );
+  //         const result = await fetchAllMessages(
+  //           chatId,
+  //           parseInt(page, 10),
+  //           parseInt(limit, 10)
+  //         );
 
-          callback({
-            success: true,
-            data: result,
-            message: "Messages fetched successfully.",
-          });
-        } catch (error) {
-          console.error("Error fetching messages:", error.message);
-          callback({
-            success: false,
-            error: error.message || "Failed to fetch messages.",
-          });
-        }
+  //         callback({
+  //           success: true,
+  //           data: result,
+  //           message: "Messages fetched successfully.",
+  //         });
+  //       } catch (error) {
+  //         console.error("Error fetching messages:", error.message);
+  //         callback({
+  //           success: false,
+  //           error: error.message || "Failed to fetch messages.",
+  //         });
+  //       }
+  //     }
+  //   );
+  // });
+
+
+
+  socket.on("getAllChatMessages", async (payload, callback) => {
+    try {
+      // Ensure callback is a function
+      if (typeof callback !== "function") {
+        console.error("Callback is missing or invalid.");
+        return;
       }
-    );
+  
+      // Validate payload
+      if (!payload || !payload.chatId || !payload.page || !payload.limit) {
+        return callback({
+          success: false,
+          error: "chatId, page, and limit are required fields.",
+        });
+      }
+  
+      const { chatId, page, limit } = payload;
+  
+      // Fetch messages
+      const result = await fetchAllMessages(
+        chatId,
+        parseInt(page, 10),
+        parseInt(limit, 10)
+      );
+  
+      // Send success response
+      callback({
+        success: true,
+        data: result,
+        message: "Messages fetched successfully.",
+      });
+    } catch (error) {
+      console.error("Error fetching messages:", error.message);
+      callback({
+        success: false,
+        error: error.message || "Failed to fetch messages.",
+      });
+    }
   });
+  
 };
