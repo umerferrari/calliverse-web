@@ -9,7 +9,7 @@ const {getAllChatMessagesSchema} = require("../DTO/MessageDTO")
 router.post('/uploadMessageFiles', upload.array('media'), uploadFiles); 
 router.post('/createMessage', upload.array('files', 5), newMessage);
 router.delete('/deleteUploadedFiles', deleteUploadedFiles);
-router.get('/fetchAllMessagesController/:chatId',validateRequest(getAllChatMessagesSchema), fetchAllMessagesController); 
+router.get('/fetchAllChatMessages/:chatId',validateRequest(getAllChatMessagesSchema), fetchAllMessagesController); 
 
 
 module.exports = router;
