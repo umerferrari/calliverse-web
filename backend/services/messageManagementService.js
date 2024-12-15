@@ -141,8 +141,8 @@ const fetchAllMessages = async (chatId, page = 1, limit = 20) => {
     const messages = await Message.find({ chatId })
       .sort({ createdAt: -1 }) // Order by newest first
       .skip(skip)
-      .limit(limit)
-      .populate('senderId', 'userName email'); // Populate sender details
+      .limit(limit);
+      // .populate('senderId', 'userName email'); // Populate sender details
   
     // Get the total count of messages for the chat
     const totalMessages = await Message.countDocuments({ chatId });
