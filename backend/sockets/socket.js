@@ -125,9 +125,21 @@ function initializeSocket(server) {
     console.log("A user connected:", socket.id);
 
     // Load socket event handlers
-    require('./socketHandlers/userEvents')(io, socket, onlineUsers);
-    require('./socketHandlers/chatEvents')(io, socket, onlineUsers);
-    require('./socketHandlers/messageEvents')(io, socket, onlineUsers);
+    try {
+      require('./socketHandlers/userEvents')(io, socket, onlineUsers);
+    } catch (error) {
+      console.log("error 1", error)
+    }
+    try {
+      require('./socketHandlers/chatEvents')(io, socket, onlineUsers);
+    } catch (error) {
+      console.log("error 2", error)
+    }
+    try {
+      require('./socketHandlers/messageEvents')(io, socket, onlineUsers);
+    } catch (error) {
+      console.log("error 3", error)
+    }
   });
 }
 
