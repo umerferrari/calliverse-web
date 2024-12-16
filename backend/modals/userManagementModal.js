@@ -72,18 +72,7 @@ UserSchema.pre("save", async function (next) {
     this.password = await bcrypt.hash(this.password, salt);
   }
 
-  // Check if profile is completed
-  if (
-    this.firstName &&
-    this.lastName &&
-    this.email &&
-    this.password &&
-    this.isModified("firstName", "lastName", "email", "password")
-  ) {
-    this.isProfileCompleted = true;
-  } else {
-    this.isProfileCompleted = false;
-  }
+
 
   next();
 });

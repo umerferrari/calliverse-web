@@ -88,53 +88,47 @@ const updateUser = async (userId, updateData, profileImageFile = null) => {
       if (user.profileImage && user.profileImage.imageUrl) {
         deleteFile(user.profileImage.imageUrl); // Delete existing profile image
       }
-      // Construct the correct image URL
       const baseUrl = process.env.BASE_URL;
-      const relativePath = profileImageFile.path.replace(process.cwd(), ""); // Remove the root path
-      updateData.profileImage = {
-        imageUrl: `${baseUrl}${relativePath}`, // Example: http://localhost:3003/uploads/profile-images/filename.jpg
+      const relativePath = profileImageFile.path.replace(process.cwd(), "");
+      user.profileImage = {
+        imageUrl: `${baseUrl}${relativePath}`,
         imageMimeType: profileImageFile.mimetype,
         imageName: profileImageFile.originalname,
       };
     }
 
-    // Update the user document
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      {
-        ...updateData,
-      },
-      { new: true }
-    );
-    //change isProfileCOmpleted to true if required fields are filled
-    if (
-      updatedUser.firstName &&
-      updatedUser.lastName &&
-      updatedUser.email &&
-      updatedUser.password
-    ) {
-      updatedUser.isProfileCompleted = true;
-      await updateUser.save
-    } else {
-      updatedUser.isProfileCompleted = false;
-      await updateUser.save
+    // Update fields
+    Object.assign(user, updateData);
 
+    // Check if the required fields are filled to set isProfileCompleted
+    if (user.firstName && user.lastName && user.email && user.password) {
+      user.isProfileCompleted = true;
+    } else {
+      user.isProfileCompleted = false;
     }
+
+    // Save the updated user document
+    await user.save();
+
+    // Return modified user data
     const modifiedUpdatedUser = {
-      _id: updatedUser?._id,
-      profileImage: updatedUser?.profileImage || "",
-      firstName: updatedUser?.firstName,
-      lastName: updatedUser?.lastName,
-      email: updatedUser?.email,
-      bio: updatedUser?.bio || "",
-      websiteLink: updatedUser?.websiteLink || "",
-      isProfileCompleted: updatedUser?.isProfileCompleted,
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      profileImage: user?.profileImage || "",
+      email: user?.email,
+      isProfileCompleted: user?.isProfileCompleted,
+      isEmailVerified: user.isEmailVerified,
+      userId: user._id,
+      bio: user?.bio || "",
+      websiteLink: user?.websiteLink || "",
     };
+
     return modifiedUpdatedUser;
   } catch (error) {
     throw new CustomError(error.message, error.statusCode || 500);
   }
 };
+
 
 const login = async (email, password) => {
   try {
@@ -204,7 +198,7 @@ const login = async (email, password) => {
     return {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
-      profileImage: user?.profileImage,
+      profileImage: user?.profileImage || "",
       email: user?.email,
       isProfileCompleted: user?.isProfileCompleted,
       isEmailVerified: user.isEmailVerified,
