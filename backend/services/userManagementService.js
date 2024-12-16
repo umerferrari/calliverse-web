@@ -121,6 +121,7 @@ const updateUser = async (userId, updateData, profileImageFile = null) => {
       userId: user._id,
       bio: user?.bio || "",
       websiteLink: user?.websiteLink || "",
+      token: null
     };
 
     return modifiedUpdatedUser;
